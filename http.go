@@ -9,6 +9,7 @@ import (
 	"net/http"
 )
 
+// HttpRequestJson 发送http请求。请求体和响应体都是json。
 func HttpRequestJson(method string, url string, headers map[string]string, req interface{}, resp interface{}) error {
 	reqBody, _ := json.Marshal(req)
 	request, err := http.NewRequest(method, url, bytes.NewBuffer(reqBody))
@@ -16,10 +17,10 @@ func HttpRequestJson(method string, url string, headers map[string]string, req i
 		log.Printf("http.NewReuqest error: %v", err)
 		return err
 	}
-	// // content-type
-	// if contentType != "" {
-	// 	request.Header.Add("Content-Type", contentType)
-	// }
+	// default content-type
+	if _, ok := headers["Content-Type"]; !ok {
+		request.Header.Add("Content-Type", "application/json")
+	}
 	// headers
 	for headerKey, headerValue := range headers {
 		request.Header.Add(headerKey, headerValue)
@@ -48,7 +49,7 @@ func HttpRequestJson(method string, url string, headers map[string]string, req i
 
 // HttpRequest 发送request
 // func SendRequest(url string, body io.Reader, addHeaders map[string]string, method string) ([]byte, error) {
-func HttpRequest(method, url string, addHeaders map[string]string, body io.Reader) ([]byte, error) {
+func HttpRequest(method, url string, headers map[string]string, body io.Reader) ([]byte, error) {
 	// 1、创建req
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
@@ -58,7 +59,7 @@ func HttpRequest(method, url string, addHeaders map[string]string, body io.Reade
 	// req.Header.Add("Content-Type", "application/json")
 
 	// 2、设置headers
-	for k, v := range addHeaders {
+	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
 
