@@ -5,5 +5,8 @@ import (
 )
 
 func Milliseconds() int64 {
-	return time.Now().UnixNano() / 1e6
+	return time.Now().UnixMilli()
+	// return time.Now().UnixNano() / 1e6
 }
+
+const HandyLayout = "2006-01-02 15:04:05.000"
