@@ -1,17 +1,17 @@
 package util
 
 import (
-	gojson "encoding/json"
-	"io/ioutil"
+	"encoding/json"
 	"log"
+	"os"
 	"strings"
 
-	json "github.com/bitly/go-simplejson"
+	sjson "github.com/bitly/go-simplejson"
 )
 
 // Message comm使用的消息
 type Message struct {
-	json.Json
+	sjson.Json
 }
 
 func NewMessage() *Message {
@@ -47,7 +47,7 @@ func (m *Message) Array() []Message {
 	if arr == nil || err != nil {
 		return nil
 	}
-	marray := make([]Message, len(arr), len(arr))
+	marray := make([]Message, len(arr))
 	for i, a := range arr {
 		marray[i].SetPath([]string{}, a)
 	}
@@ -61,7 +61,7 @@ func (m *Message) Map(path string, def ...map[string]interface{}) map[string]int
 // Unmarshal 把m解析到v上。类似json.Unmarshal()
 func (m *Message) Unmarshal(v interface{}) error {
 	b := m.ToBytes()
-	return gojson.Unmarshal(b, v)
+	return json.Unmarshal(b, v)
 }
 
 // ToBytes Message转成[]byte
@@ -80,7 +80,7 @@ func (m *Message) ToString() string {
 
 // MessageFromBytes 字节数组转成Message
 func MessageFromBytes(data []byte) (*Message, error) {
-	m, err := json.NewJson(data)
+	m, err := sjson.NewJson(data)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func MessageFromStruct(v interface{}) *Message {
 
 // MessageFromFile 从filepath读取Message
 func MessageFromFile(filepath string) (*Message, error) {
-	b, err := ioutil.ReadFile(filepath)
+	b, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (m *Message) ToFile(filepath string) error {
 		return err
 	}
 	const defaultFileMode = 0644
-	return ioutil.WriteFile(filepath, b, defaultFileMode)
+	return os.WriteFile(filepath, b, defaultFileMode)
 }
 
 /*
