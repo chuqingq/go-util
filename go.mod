@@ -1,4 +1,4 @@
-module go-util
+module github.com/chuqingq/go-util
 
 go 1.19
 
