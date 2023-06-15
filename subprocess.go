@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"os/exec"
+	"strings"
 )
 
 // SubProcess 对os.exec.Cmd的封装，用于启动子进程
@@ -21,10 +22,10 @@ type SubProcess struct {
 }
 
 // NewSubProcess 创建一个SubProcess
-func NewSubProcess(cmd1 string) (*SubProcess, error) {
+func NewSubProcess(name string, args ...string) (*SubProcess, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cmd := exec.CommandContext(ctx, cmd1)
+	cmd := exec.CommandContext(ctx, name, args...)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -88,7 +89,11 @@ func (s *SubProcess) IsAlive() bool {
 
 // Send 向子进程发送消息
 func (s *SubProcess) Send(m *Message) error {
-	return s.encoder.Encode(m)
+	err := s.encoder.Encode(m)
+	if err == io.ErrClosedPipe || err == io.EOF || strings.Contains(err.Error(), "broken pipe") {
+		s.Alive = false
+	}
+	return err
 }
 
 // Recv 从子进程接收消息
@@ -96,6 +101,9 @@ func (s *SubProcess) Recv() (*Message, error) {
 	m := NewMessage()
 	err := s.decoder.Decode(m)
 	if err != nil {
+		if err == io.EOF {
+			s.Alive = false
+		}
 		return nil, err
 	}
 	return m, nil
