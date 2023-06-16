@@ -1,67 +1,56 @@
 package util
 
 import (
-	"log"
-	"os"
+	"fmt"
+	"strings"
+	"sync"
+
+	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func init() {
-	log.SetFlags(log.Flags() | log.Lshortfile | log.Lmicroseconds)
-	logger = log.New(os.Stderr, "", log.Flags())
+var logger *logrus.Logger
+var defaultLoggerOnce sync.Once
+
+func Logger() *logrus.Logger {
+	defaultLoggerOnce.Do(func() {
+		logger = &logrus.Logger{
+			Out: &lumberjack.Logger{
+				Filename:   "/dev/shm/test.log", // in memory
+				MaxSize:    1,                   // megabytes
+				MaxBackups: 1,                   // reserve 1 backup
+				// MaxAge:     28, //days
+			},
+			// Formatter: &logrus.TextFormatter{},
+			Formatter: &myFormatter{},
+			Hooks:     make(logrus.LevelHooks),
+			Level:     logrus.DebugLevel,
+		}
+		logger.SetReportCaller(true)
+		// defaultLogger.SetLevel(logrus.WarnLevel)
+	})
+	return logger
 }
 
-const (
-	LogLevelDebug = 0 + iota
-	LogLevelInfo
-	LogLevelWarn
-	LogLevelError
-	LogLevelFatal
-	LogLevelOff
-)
-
-var curLevel int = LogLevelDebug
-
-func SetLogLevel(level int) {
-	if level < LogLevelDebug {
-		curLevel = LogLevelDebug
-	} else if curLevel > LogLevelOff {
-		curLevel = LogLevelOff
-	} else {
-		curLevel = level
-	}
+type myFormatter struct {
 }
 
-var empty emptyLogger
-
-var logger *log.Logger
-
-type printfInterface interface {
-	Printf(fmt string, v ...interface{})
+func splitAndGetLast(str string, sep string) string {
+	slice := strings.Split(str, sep)
+	return slice[len(slice)-1]
 }
 
-type emptyLogger struct {
+func (f *myFormatter) Format(e *logrus.Entry) ([]byte, error) {
+	// time level caller message
+	return []byte(fmt.Sprintf("%s %5.5s [%s:%v %s] %s\n",
+		e.Time.Format("01/02 15:04:05.000000"),
+		e.Level.String(),
+		splitAndGetLast(e.Caller.File, "/"),
+		e.Caller.Line, splitAndGetLast(e.Caller.Function, "."),
+		e.Message)), nil
 }
 
-func (e *emptyLogger) Printf(fmt string, v ...interface{}) {
-}
-
-func D() printfInterface {
-	if curLevel <= LogLevelDebug {
-		return logger
-	}
-	return &empty
-}
-
-func I() printfInterface {
-	if curLevel <= LogLevelInfo {
-		return logger
-	}
-	return &empty
-}
-
-func E() printfInterface {
-	if curLevel <= LogLevelError {
-		return logger
-	}
-	return &empty
-}
+// TODO
+// 1.output, appendoutput, removealloutputs
+// 2.log file name
+// 3.log level
