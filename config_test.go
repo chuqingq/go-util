@@ -6,7 +6,7 @@ import (
 )
 
 const storeFile = "test.store"
-const defaultStoreFile = "../base/cmd/default-base.store"
+const defaultStoreFile = "default-base.store"
 
 // Set, Get, GetDefaultInt, GetDefaultString, Remove
 func TestConfig(t *testing.T) {
@@ -18,7 +18,7 @@ func TestConfig(t *testing.T) {
 	}
 	defer store.Remove()
 	// get not exist key
-	value := store.String("col1.key1", "not exist")
+	value := store.Get("col1.key1").MustString("not exist")
 	if value != "not exist" {
 		t.Fatalf("GetDefaultString error")
 	}
@@ -29,19 +29,19 @@ func TestConfig(t *testing.T) {
 	// 	t.Fatalf("store.Set() error: %v", err)
 	// }
 	// exist key
-	value = store.String("col1.key1", "not exist")
+	value = store.Get("col1.key1").MustString("not exist")
 	if value != "value1" {
 		t.Fatalf("store.Get(exist key) error: %v", value)
 	}
 	// replace key
 	store.Set("col1.key1", "value2")
-	value = store.String("col1.key1", "not exist")
+	value = store.Get("col1.key1").MustString("not exist")
 	if value != "value2" {
 		t.Fatalf("store.Get(replaced key) error: %v", value)
 	}
 	// replace key by GetDefaultInt
 	store.Set("col1.key1", 10)
-	valueInt := store.Int("col1.key1", -1)
+	valueInt := store.Get("col1.key1").MustInt(-1)
 	if valueInt != 10 {
 		t.Fatalf("store.Get(replaced key) error: %v", valueInt)
 	}
@@ -50,7 +50,7 @@ func TestConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewStore(another store) error: %v", err)
 	}
-	valueInt = store2.Int("col1.key1", -1)
+	valueInt = store2.Get("col1.key1").MustInt(-1)
 	if valueInt != 10 {
 		t.Fatalf("store.Get(replaced key) error: %v", valueInt)
 	}
@@ -92,7 +92,7 @@ func TestConfigReset(t *testing.T) {
 	// Set
 	store.Set("IMCM.Net.ComPort", "123")
 	// Get
-	v := store.String("IMCM.Net.ComPort", "default")
+	v := store.Get("IMCM.Net.ComPort").MustString("default")
 	if v != "123" {
 		t.Fatalf("GetDefaultString error: %v, should be %v", v, "123")
 	}
@@ -102,7 +102,7 @@ func TestConfigReset(t *testing.T) {
 		t.Fatalf("Reset error: %v", err)
 	}
 	// Get
-	v2 := store.String("IMCM.Net.ComPort", "default2")
+	v2 := store.Get("IMCM.Net.ComPort").MustString("default2")
 	if v2 != "COM1" {
 		t.Fatalf("GetDefaultString error: %v, should be %v", v, "COM1")
 	}

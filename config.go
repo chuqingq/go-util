@@ -3,19 +3,21 @@ package util
 import (
 	"log"
 	"os"
+
+	sjson "github.com/chuqingq/simple-json"
 )
 
 type Config struct {
-	*Message
+	*sjson.Json
 	filePath        string
 	defaultFilePath string
 }
 
 func NewConfig(filePath, defaultFilePath string) (*Config, error) {
-	m, err := MessageFromFile(filePath)
+	m, err := sjson.FromFile(filePath)
 	if err != nil {
 		log.Printf("WARN file %s not found", filePath)
-		m, err = MessageFromFile(defaultFilePath)
+		m, err = sjson.FromFile(defaultFilePath)
 		if err != nil {
 			log.Printf("ERROR file %s not found", defaultFilePath)
 			return nil, err
@@ -23,7 +25,7 @@ func NewConfig(filePath, defaultFilePath string) (*Config, error) {
 		m.ToFile(filePath)
 	}
 	return &Config{
-		Message:         m,
+		Json:            m,
 		filePath:        filePath,
 		defaultFilePath: defaultFilePath,
 	}, nil
@@ -32,7 +34,7 @@ func NewConfig(filePath, defaultFilePath string) (*Config, error) {
 // 恢复默认设置
 func (c *Config) Reset() error {
 	var err error
-	c.Message, err = MessageFromFile(c.defaultFilePath)
+	c.Json, err = sjson.FromFile(c.defaultFilePath)
 	if err != nil {
 		return err
 	}
@@ -50,7 +52,7 @@ func (c *Config) Reset() error {
 // }
 
 func (c *Config) SaveStruct(path string, v interface{}) {
-	m := MessageFromStruct(v)
+	m := sjson.FromStruct(v)
 	c.Set(path, m)
 }
 
@@ -63,12 +65,12 @@ func (c *Config) SaveStruct(path string, v interface{}) {
 
 func (c *Config) LoadStruct(path string, v interface{}) {
 	m := c.Get(path)
-	m.Unmarshal(v)
+	m.ToStruct(v)
 }
 
 // Set 设置值。Message.Set + save。v支持string/int/bool等，如果是复合值，需要是Map/MustMap()
 func (c *Config) Set(path string, v interface{}) {
-	c.Message.Set(path, v)
+	c.Json.Set(path, v)
 	c.save()
 }
 
